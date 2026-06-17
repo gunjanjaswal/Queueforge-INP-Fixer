@@ -1,5 +1,4 @@
 === QueueForge – Interaction to Next Paint Fixer ===
-Plugin URI: https://github.com/gunjanjaswal/Queueforge-INP-Fixer
 Contributors: gunjanjaswal
 Donate link: https://ko-fi.com/gunjanjaswal
 Tags: performance, web-vitals, inp, javascript, core-web-vitals
