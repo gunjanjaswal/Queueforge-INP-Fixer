@@ -1,7 +1,7 @@
 /**
- * Yieldific INP Hyper-Optimizer — front-end runtime.
+ * QueueForge INP Fixer — front-end runtime.
  *
- * 1. Holds scripts rewritten to type="yieldific/javascript" until the first
+ * 1. Holds scripts rewritten to type="queueforge/javascript" until the first
  *    real user interaction (or a fallback timeout), then restores them in
  *    order while yielding the main thread between each one.
  * 2. Optional live overlay reporting measured INP and long-task blocking time.
@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    var cfg = window.YieldificINP || {};
+    var cfg = window.QueueForgeINP || {};
     var INTERACTION_EVENTS = ['keydown', 'mousedown', 'mousemove', 'touchstart', 'touchmove', 'wheel', 'scroll'];
     var listenerOpts = { passive: true, capture: true };
     var started = false;
@@ -40,7 +40,7 @@
                 if (attr.name === 'type') {
                     continue; // drop the dummy type so it executes
                 }
-                if (attr.name === 'data-yieldific-src') {
+                if (attr.name === 'data-queueforge-src') {
                     newScript.src = attr.value; // restore the real src
                     continue;
                 }
@@ -72,7 +72,7 @@
             window.removeEventListener(evt, loadDelayedScripts, listenerOpts);
         });
 
-        var nodes = document.querySelectorAll('script[type="yieldific/javascript"]');
+        var nodes = document.querySelectorAll('script[type="queueforge/javascript"]');
 
         var chain = Promise.resolve();
         for (var i = 0; i < nodes.length; i++) {
@@ -89,7 +89,7 @@
                 document.dispatchEvent(new Event('DOMContentLoaded', { bubbles: true }));
                 window.dispatchEvent(new Event('load'));
             } catch (e) { /* older browsers */ }
-            document.dispatchEvent(new Event('yieldific-scripts-loaded'));
+            document.dispatchEvent(new Event('queueforge-scripts-loaded'));
         });
     }
 

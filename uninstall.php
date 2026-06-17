@@ -2,7 +2,7 @@
 /**
  * Fired when the plugin is uninstalled.
  *
- * @package Yieldific_INP_Hyper_Optimizer
+ * @package QueueForge_INP_Fixer
  */
 
 // If uninstall not called from WordPress, then exit.
@@ -11,5 +11,5 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 // Clean up plugin options.
-delete_option( 'yinp_settings' );
-delete_option( 'yinp_support_notice_dismissed' );
+delete_option( 'qfinp_settings' );
+delete_option( 'qfinp_support_notice_dismissed' );

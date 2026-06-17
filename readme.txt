@@ -1,5 +1,5 @@
-=== Yieldific – Interaction to Next Paint (INP) Hyper-Optimizer ===
-Plugin URI: https://github.com/gunjanjaswal/yieldific-inp-hyper-optimizer
+=== QueueForge – Interaction to Next Paint Fixer ===
+Plugin URI: https://github.com/gunjanjaswal/Queueforge-INP-Fixer
 Contributors: gunjanjaswal
 Donate link: https://ko-fi.com/gunjanjaswal
 Tags: performance, web-vitals, inp, javascript, core-web-vitals
@@ -16,7 +16,7 @@ Lowers Interaction to Next Paint (INP) by delaying heavy JavaScript until the fi
 
 Google's Core Web Vitals now use **Interaction to Next Paint (INP)** instead of First Input Delay. Caching plugins make pages *load* fast, but they do nothing about the bloated JavaScript from other plugins, themes, ads, and analytics that blocks the browser's main thread and makes mobile interactions feel choppy.
 
-Yieldific INP Hyper-Optimizer attacks INP directly:
+QueueForge INP Fixer attacks INP directly:
 
 * **Delays eligible JavaScript** until the visitor's first scroll, tap, key press, or mouse move. The main thread stays free during the critical early window, so the page responds immediately.
 * **Yields the main thread between scripts** when the deferred code finally runs, using the native `scheduler.yield()` (with a `setTimeout` fallback) so the queued scripts do not re-block the thread in one long task.
@@ -32,7 +32,7 @@ Yieldific INP Hyper-Optimizer attacks INP directly:
 * Keyword exclusion list, plus per-tag `data-no-optimize` opt-out
 * Skips logged-in editors so page builders keep working
 * Live INP + blocking-time debug overlay (admins only)
-* `?yieldific_off` URL switch to bypass the delay for one page load
+* `?queueforge_off` URL switch to bypass the delay for one page load
 * No database writes on the front end; nothing is cached or stored per visitor
 
 = Why INP? =
@@ -41,14 +41,14 @@ INP measures how quickly the page visually responds to *every* interaction acros
 
 = Developer-Friendly =
 
-* `yinp_exclusions` filter to programmatically add never-delay keywords.
+* `qfinp_exclusions` filter to programmatically add never-delay keywords.
 * Uses an output buffer on `template_redirect`; no edits to your theme or other plugins.
 
 == Installation ==
 
-1. Upload the `yieldific-interaction-to-next-paint-inp-hyper-optimizer` folder to `/wp-content/plugins/`.
+1. Upload the `queueforge-inp-fixer` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
-3. Visit **Settings → Yieldific INP** to tune the delay, exclusions, and debug overlay. Defaults work out of the box.
+3. Visit **Settings → QueueForge INP** to tune the delay, exclusions, and debug overlay. Defaults work out of the box.
 
 == Frequently Asked Questions ==
 
@@ -62,7 +62,7 @@ No, unless you enable "Delay jQuery". Many themes assume jQuery is present at lo
 
 = How do I test the effect? =
 
-Enable the **Live INP overlay** in settings and browse the front end while logged in as an admin. Compare against a page loaded with `?yieldific_off` appended to the URL.
+Enable the **Live INP overlay** in settings and browse the front end while logged in as an admin. Compare against a page loaded with `?queueforge_off` appended to the URL.
 
 = Does it work with caching plugins? =
 

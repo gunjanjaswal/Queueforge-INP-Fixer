@@ -1,10 +1,10 @@
 <div align="center">
 
-# ⚡ Yieldific – Interaction to Next Paint (INP) Hyper-Optimizer
+# ⚡ QueueForge – Interaction to Next Paint Fixer
 
 ### Pass Core Web Vitals by fixing the metric caching plugins ignore: **Interaction to Next Paint (INP)**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-2ea44f?style=for-the-badge)](https://github.com/gunjanjaswal/yieldific-inp-hyper-optimizer)
+[![Version](https://img.shields.io/badge/version-1.0.0-2ea44f?style=for-the-badge)](https://github.com/gunjanjaswal/Queueforge-INP-Fixer)
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-21759b?style=for-the-badge&logo=wordpress&logoColor=white)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPLv2-blue?style=for-the-badge)](LICENSE)
@@ -26,7 +26,7 @@ Caching plugins make pages **load** fast — but they do **nothing** about the b
 
 ## 💡 The Fix
 
-Yieldific attacks the root cause of high INP in two moves:
+QueueForge attacks the root cause of high INP in two moves:
 
 | # | Technique | What it does |
 |:-:|-----------|--------------|
@@ -37,7 +37,7 @@ Yieldific attacks the root cause of high INP in two moves:
   ┌─ Before ──────────────────────────────────────────────┐
   │ load ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ (one long task) 👆 tap → 😴 480ms │
   └────────────────────────────────────────────────────────┘
-  ┌─ With Yieldific ──────────────────────────────────────┐
+  ┌─ With QueueForge ──────────────────────────────────────┐
   │ load ░░  👆 tap → ⚡ 90ms   …then ▓ yield ▓ yield ▓     │
   └────────────────────────────────────────────────────────┘
 ```
@@ -53,7 +53,7 @@ Yieldific attacks the root cause of high INP in two moves:
 - 🚫 **Exclusion list** — keyword-match any script to leave it alone, or add `data-no-optimize` to a single tag
 - 👤 **Skips logged-in editors** — page builders keep working while you edit
 - 📊 **Live INP overlay** — admins see real measured INP + long-task blocking time, color-coded, right on the page
-- 🔌 **`?yieldific_off`** — append to any URL to bypass the delay for one page load
+- 🔌 **`?queueforge_off`** — append to any URL to bypass the delay for one page load
 - 🧩 **Caching-friendly** — rewrites HTML as it's generated, so the output caches normally
 
 ---
@@ -62,12 +62,12 @@ Yieldific attacks the root cause of high INP in two moves:
 
 ```bash
 # Manual
-1. Download / clone into wp-content/plugins/yieldific-interaction-to-next-paint-inp-hyper-optimizer
+1. Download / clone into wp-content/plugins/queueforge-inp-fixer
 2. Activate via Plugins → Installed Plugins
-3. Settings → Yieldific INP  (defaults work out of the box)
+3. Settings → QueueForge INP  (defaults work out of the box)
 ```
 
-Then enable the **Live INP overlay**, browse your front end as an admin, and compare a normal load against the same URL with `?yieldific_off`.
+Then enable the **Live INP overlay**, browse your front end as an admin, and compare a normal load against the same URL with `?queueforge_off`.
 
 ---
 
@@ -89,7 +89,7 @@ Then enable the **Live INP overlay**, browse your front end as an admin, and com
 
 ```php
 // Add never-delay keywords programmatically
-add_filter( 'yinp_exclusions', function ( $list ) {
+add_filter( 'qfinp_exclusions', function ( $list ) {
     $list[] = 'my-critical-widget';
     return $list;
 } );
@@ -97,18 +97,18 @@ add_filter( 'yinp_exclusions', function ( $list ) {
 
 ```js
 // Run code after the deferred scripts have all loaded
-document.addEventListener( 'yieldific-scripts-loaded', function () {
+document.addEventListener( 'queueforge-scripts-loaded', function () {
     // safe to use libraries that were delayed
 } );
 ```
 
-**How it works:** an output buffer on `template_redirect` rewrites eligible scripts to `type="yieldific/javascript"` and moves `src` → `data-yieldific-src` (the browser won't fetch or execute them). A tiny runtime restores them in order on the first interaction. No theme or plugin files are touched.
+**How it works:** an output buffer on `template_redirect` rewrites eligible scripts to `type="queueforge/javascript"` and moves `src` → `data-queueforge-src` (the browser won't fetch or execute them). A tiny runtime restores them in order on the first interaction. No theme or plugin files are touched.
 
 ---
 
 ## 💎 Want more? → Pro
 
-The free plugin delays **all** eligible scripts on first interaction. **Yieldific INP Hyper-Optimizer Pro** adds:
+The free plugin delays **all** eligible scripts on first interaction. **QueueForge INP Fixer PRO** adds:
 
 - 📱 Separate **mobile / desktop** fallback timeouts
 - 👁️ **Load-on-visible** triggers (IntersectionObserver) for comments, maps, embeds
