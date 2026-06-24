@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    var cfg = window.QueueForgeINP || {};
+    var cfg = window.qfinpConfig || {};
     var INTERACTION_EVENTS = ['keydown', 'mousedown', 'mousemove', 'touchstart', 'touchmove', 'wheel', 'scroll'];
     var listenerOpts = { passive: true, capture: true };
     var started = false;

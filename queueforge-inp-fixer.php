@@ -240,7 +240,15 @@ function qfinp_optimize_html($html)
             // Drop any original type attribute (we set our own dummy type).
             $new_attrs = preg_replace('/\btype\s*=\s*["\'][^"\']*["\']/i', '', $new_attrs);
 
-            return '<script type="queueforge/javascript"' . $new_attrs . '>' . $inner . '</script>';
+            // NOTE: This is not resource enqueuing. It rewrites a <script> tag
+            // that is *already present* in the generated page so the browser
+            // parks it (unknown "queueforge/javascript" type) until the runtime
+            // restores it on first interaction. wp_enqueue_* can only add this
+            // plugin's own scripts (which it does for the runtime, see
+            // qfinp_enqueue_runtime()); it cannot transform tags output by other
+            // plugins or the theme. $inner is the page's original script body and
+            // is re-emitted verbatim so the deferred code stays byte-identical.
+            return '<script type="queueforge/javascript"' . $new_attrs . '>' . $inner . '</script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- output-buffer transform of an existing tag, not script inclusion.
         },
         $html
     );
@@ -278,7 +286,7 @@ function qfinp_enqueue_runtime()
         true
     );
 
-    wp_localize_script('qfinp-runtime', 'QueueForgeINP', array(
+    wp_localize_script('qfinp-runtime', 'qfinpConfig', array(
         'delay'    => qfinp_should_optimize() ? 1 : 0,
         'yield'    => !empty($s['enable_yield']) ? 1 : 0,
         'fallback' => (int) $s['delay_fallback'],
@@ -416,8 +424,8 @@ function qfinp_render_settings_page()
 
 function qfinp_plugin_action_links($links)
 {
-    $settings_link = '<a href="' . esc_url(admin_url('options-general.php?page=queueforge-inp-fixer')) . '">' . __('Settings', 'queueforge-inp-fixer') . '</a>';
-    $coffee_link = '<a href="https://ko-fi.com/gunjanjaswal" target="_blank" style="color: #0073aa; font-weight: bold;">' . __('Support on Ko-fi', 'queueforge-inp-fixer') . '</a>';
+    $settings_link = '<a href="' . esc_url(admin_url('options-general.php?page=queueforge-inp-fixer')) . '">' . esc_html__('Settings', 'queueforge-inp-fixer') . '</a>';
+    $coffee_link = '<a href="' . esc_url('https://ko-fi.com/gunjanjaswal') . '" target="_blank" style="color: #0073aa; font-weight: bold;">' . esc_html__('Support on Ko-fi', 'queueforge-inp-fixer') . '</a>';
     array_unshift($links, $settings_link, $coffee_link);
     return $links;
 }
@@ -426,8 +434,8 @@ add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'qfinp_plugin_act
 function qfinp_plugin_meta_links($links, $file)
 {
     if (plugin_basename(__FILE__) === $file) {
-        $links[] = '<a href="https://wordpress.org/support/plugin/queueforge-inp-fixer/" target="_blank">' . __('Plugin Support', 'queueforge-inp-fixer') . '</a>';
-        $links[] = '<a href="mailto:hello@gunjanjaswal.me">' . __('Contact Developer', 'queueforge-inp-fixer') . '</a>';
+        $links[] = '<a href="' . esc_url('https://wordpress.org/support/plugin/queueforge-inp-fixer/') . '" target="_blank">' . esc_html__('Plugin Support', 'queueforge-inp-fixer') . '</a>';
+        $links[] = '<a href="' . esc_url('mailto:hello@gunjanjaswal.me') . '">' . esc_html__('Contact Developer', 'queueforge-inp-fixer') . '</a>';
     }
     return $links;
 }
@@ -450,13 +458,13 @@ function qfinp_enqueue_admin_scripts($hook)
                     url: ajaxurl,
                     data: {
                         action: "qfinp_dismiss_support_notice",
-                        nonce: "%s"
+                        nonce: %s
                     }
                 });
             });
         });
         ',
-        wp_create_nonce('qfinp_dismiss_notice')
+        wp_json_encode(wp_create_nonce('qfinp_dismiss_notice'))
     );
     wp_add_inline_script('jquery', $inline_script);
 }
