@@ -122,6 +122,16 @@ The free plugin delays **all** eligible scripts on first interaction. **QueueFor
 
 ---
 
+## 📋 Changelog
+
+### 1.0.0
+
+- Initial release: interaction-delayed JavaScript, main-thread yielding, fallback timeout, exclusions, logged-in skip, and live INP + long-task overlay.
+- All output is escaped late, including the admin-notice nonce passed to inline JavaScript via `wp_json_encode()`.
+- Every function, option, and the localized config object uses the `qfinp` prefix to avoid conflicts with other plugins.
+
+---
+
 ## ❤️ Support
 
 If this helped you turn your INP green, consider supporting development:
