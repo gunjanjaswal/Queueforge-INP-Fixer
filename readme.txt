@@ -71,6 +71,8 @@ Yes. It rewrites the HTML as it is generated; the result can be cached normally.
 
 = 1.0.0 =
 * Initial release: interaction-delayed JavaScript, main-thread yielding, fallback timeout, exclusions, logged-in skip, and live INP/long-task overlay.
+* All output is escaped late, including the admin-notice nonce passed to inline JavaScript via wp_json_encode().
+* Every function, option, and the localized config object uses the qfinp prefix to avoid conflicts with other plugins.
 
 == Upgrade Notice ==
 
