@@ -3,7 +3,7 @@
  * Plugin Name: QueueForge – Interaction to Next Paint Fixer
  * Plugin URI: https://github.com/gunjanjaswal/Queueforge-INP-Fixer
  * Description: Lowers Interaction to Next Paint (INP) by delaying heavy third-party / theme JavaScript until the first real user interaction and yielding the main thread between each script so the browser stays responsive. Includes a live INP + long-task debug overlay.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Gunjan Jaswal
  * Author URI: https://www.gunjanjaswal.me
  * License: GPLv2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
     die;
 }
 
-define('QFINP_VERSION', '1.0.0');
+define('QFINP_VERSION', '1.1.0');
 define('QFINP_FILE', __FILE__);
 
 /**
@@ -30,6 +30,72 @@ function qfinp_activate()
     delete_option('qfinp_support_notice_dismissed');
 }
 register_activation_hook(__FILE__, 'qfinp_activate');
+
+/**
+ * One-time safety gate for the 1.1.0 upgrade.
+ *
+ * In 1.0.0 the delay never actually ran: the plugin parked its own config tag,
+ * so the runtime booted with no settings and restored nothing. Every install
+ * therefore has `enable_delay = 1` stored while having never once experienced
+ * the behaviour. Simply fixing the bug would switch aggressive script deferral
+ * on for every one of those sites in an automatic update, with no warning and
+ * no way to correlate the resulting breakage with anything the owner did.
+ *
+ * So we turn it off for existing installs and let them opt in deliberately.
+ * Fresh installs still default to on, because there is nothing to surprise.
+ */
+function qfinp_maybe_gate_delay_on_upgrade()
+{
+    if (get_option('qfinp_delay_gate_applied')) {
+        return;
+    }
+
+    // No stored settings at all means this is a fresh install, not an upgrade.
+    $stored = get_option('qfinp_settings', null);
+    if (is_array($stored) && !empty($stored['enable_delay'])) {
+        $stored['enable_delay'] = 0;
+        update_option('qfinp_settings', $stored);
+        update_option('qfinp_delay_gate_notice', 1);
+    }
+
+    update_option('qfinp_delay_gate_applied', 1);
+}
+add_action('admin_init', 'qfinp_maybe_gate_delay_on_upgrade');
+
+/**
+ * Explain the gate once, on the plugin's own settings screen and the plugins list.
+ */
+function qfinp_delay_gate_notice()
+{
+    if (!current_user_can('manage_options') || !get_option('qfinp_delay_gate_notice')) {
+        return;
+    }
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || !in_array($screen->id, array('plugins', 'settings_page_queueforge-inp-fixer'), true)) {
+        return;
+    }
+
+    printf(
+        '<div class="notice notice-warning"><p><strong>%s</strong> %s</p><p><a href="%s" class="button button-primary">%s</a> <a href="%s" class="button">%s</a></p></div>',
+        esc_html__('QueueForge: script delay was never actually running.', 'queueforge-inp-fixer'),
+        esc_html__('A bug in 1.0.0 meant delayed scripts were never restored, so the optimisation did nothing on your site. That is fixed in 1.1.0. Because the behaviour is effectively new, we have left it switched off rather than enabling it automatically — review the settings and turn it on when you are ready to test it.', 'queueforge-inp-fixer'),
+        esc_url(admin_url('options-general.php?page=queueforge-inp-fixer')),
+        esc_html__('Review settings', 'queueforge-inp-fixer'),
+        esc_url(wp_nonce_url(admin_url('options-general.php?page=queueforge-inp-fixer&qfinp_dismiss_gate=1'), 'qfinp_dismiss_gate')),
+        esc_html__('Dismiss', 'queueforge-inp-fixer')
+    );
+}
+add_action('admin_notices', 'qfinp_delay_gate_notice');
+
+function qfinp_handle_gate_dismiss()
+{
+    if (!isset($_GET['qfinp_dismiss_gate']) || !current_user_can('manage_options')) {
+        return;
+    }
+    check_admin_referer('qfinp_dismiss_gate');
+    delete_option('qfinp_delay_gate_notice');
+}
+add_action('admin_init', 'qfinp_handle_gate_dismiss');
 
 /* -------------------------------------------------------------------------
  * Settings storage
@@ -44,6 +110,7 @@ function qfinp_default_settings()
         'delay_jquery'     => 0,
         'skip_logged_in'   => 1,
         'enable_debug'     => 0,
+        'dispatch_ready'   => 0,
         'exclusions'       => '',
     );
 }
@@ -61,7 +128,7 @@ function qfinp_sanitize_settings($input)
 {
     $clean = array();
 
-    $bool_keys = array('enable_delay', 'enable_yield', 'delay_jquery', 'skip_logged_in', 'enable_debug');
+    $bool_keys = array('enable_delay', 'enable_yield', 'delay_jquery', 'skip_logged_in', 'enable_debug', 'dispatch_ready');
     foreach ($bool_keys as $key) {
         $clean[$key] = !empty($input[$key]) ? 1 : 0;
     }
@@ -103,8 +170,15 @@ function qfinp_get_exclusions()
     $s = qfinp_get_settings();
 
     // Hard defaults the plugin must never break.
+    //
+    // 'qfinp' matters as much as 'queueforge': WordPress names this plugin's
+    // own inline config tag after the script *handle* (qfinp-runtime-js-before),
+    // which contains no "queueforge" substring. Without this entry the plugin
+    // parks its own configuration, the runtime boots with an empty config, and
+    // no delayed script is ever restored. That was the 1.0.0 defect.
     $defaults = array(
-        'queueforge',     // this plugin's own runtime + config object
+        'queueforge',     // this plugin's own runtime file
+        'qfinp',          // its handle-derived config/inline tags
         'admin-bar',     // WP admin bar interactions
         'wp-admin',
         'data-no-optimize',
@@ -225,7 +299,7 @@ function qfinp_optimize_html($html)
         return $html;
     }
 
-    return preg_replace_callback(
+    $result = preg_replace_callback(
         '#<script\b([^>]*)>(.*?)</script>#is',
         function ($m) {
             $attrs = $m[1];
@@ -252,6 +326,18 @@ function qfinp_optimize_html($html)
         },
         $html
     );
+
+    // preg_replace_callback() returns null when PCRE hits its backtrack or
+    // recursion limit, which a single inline script over roughly 1 MB is enough
+    // to trigger (page builders inline large JSON blobs routinely). Returning
+    // null from an ob_start() handler makes PHP emit an EMPTY response, so the
+    // visitor gets a blank page. Fall back to the untouched HTML instead: no
+    // optimisation is vastly better than no page.
+    if ( null === $result ) {
+        return $html;
+    }
+
+    return $result;
 }
 
 function qfinp_start_buffer()
@@ -286,12 +372,21 @@ function qfinp_enqueue_runtime()
         true
     );
 
-    wp_localize_script('qfinp-runtime', 'qfinpConfig', array(
-        'delay'    => qfinp_should_optimize() ? 1 : 0,
-        'yield'    => !empty($s['enable_yield']) ? 1 : 0,
-        'fallback' => (int) $s['delay_fallback'],
-        'debug'    => $debug,
-    ));
+    // wp_add_inline_script rather than wp_localize_script: the latter casts every
+    // value to a string, so an integer 0 ships as "0" — which is truthy in
+    // JavaScript. That made the admin-only debug overlay render for every
+    // visitor. wp_json_encode preserves the real types.
+    wp_add_inline_script(
+        'qfinp-runtime',
+        'window.qfinpConfig = ' . wp_json_encode(array(
+            'delay'    => qfinp_should_optimize() ? 1 : 0,
+            'yield'    => !empty($s['enable_yield']) ? 1 : 0,
+            'fallback' => (int) $s['delay_fallback'],
+            'debug'    => $debug,
+            'ready'    => !empty($s['dispatch_ready']) ? 1 : 0,
+        )) . ';',
+        'before'
+    );
 }
 add_action('wp_enqueue_scripts', 'qfinp_enqueue_runtime');
 
@@ -375,6 +470,13 @@ function qfinp_render_settings_page()
                     <td>
                         <label><input type="checkbox" name="qfinp_settings[skip_logged_in]" value="1" <?php checked($s['skip_logged_in']); ?>> <?php esc_html_e('Do not delay scripts for users who can edit posts.', 'queueforge-inp-fixer'); ?></label>
                         <p class="description"><?php esc_html_e('Keeps page builders and admin tooling working while editing. Visitors still get the optimisation.', 'queueforge-inp-fixer'); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Re-fire ready events', 'queueforge-inp-fixer'); ?></th>
+                    <td>
+                        <label><input type="checkbox" name="qfinp_settings[dispatch_ready]" value="1" <?php checked($s['dispatch_ready']); ?>> <?php esc_html_e('Re-dispatch DOMContentLoaded and load after delayed scripts run.', 'queueforge-inp-fixer'); ?></label>
+                        <p class="description"><?php esc_html_e('Off by default. Some delayed libraries only initialise on these events, but re-firing them also re-runs handlers from scripts that were never delayed — which can double-count analytics or initialise sliders twice. Turn on only if a delayed script fails to start, and check the front end afterwards.', 'queueforge-inp-fixer'); ?></p>
                     </td>
                 </tr>
                 <tr>
@@ -496,12 +598,18 @@ function qfinp_admin_notice()
         ); ?></p>
     </div>
     <?php
-    update_option('qfinp_support_notice_dismissed', true);
+    // Deliberately no update_option() here. Marking the notice dismissed as a
+    // side effect of *rendering* it meant it vanished after a single paint
+    // whether or not anyone clicked Dismiss, which also made the AJAX dismiss
+    // handler below unreachable dead code.
 }
 add_action('admin_notices', 'qfinp_admin_notice');
 
 function qfinp_dismiss_support_notice()
 {
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('Insufficient permissions', 'queueforge-inp-fixer'), 403);
+    }
     if (!isset($_REQUEST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['nonce'])), 'qfinp_dismiss_notice')) {
         wp_die(esc_html__('Security check failed', 'queueforge-inp-fixer'), 403);
     }

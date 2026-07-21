@@ -4,7 +4,7 @@
 
 ### Pass Core Web Vitals by fixing the metric caching plugins ignore: **Interaction to Next Paint (INP)**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-2ea44f?style=for-the-badge)](https://github.com/gunjanjaswal/Queueforge-INP-Fixer)
+[![Version](https://img.shields.io/badge/version-1.1.0-2ea44f?style=for-the-badge)](https://github.com/gunjanjaswal/Queueforge-INP-Fixer)
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-21759b?style=for-the-badge&logo=wordpress&logoColor=white)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPLv2-blue?style=for-the-badge)](LICENSE)
@@ -81,7 +81,12 @@ Then enable the **Live INP overlay**, browse your front end as an admin, and com
 | Delay jQuery | ❌ | Opt-in — only if your theme runs without jQuery at load |
 | Never delay (keywords) | — | One keyword per line (e.g. `recaptcha`, `consent`) |
 | Skip logged-in editors | ✅ | Don't delay for users who can edit posts |
+| Re-fire ready events | ❌ | Re-dispatch `DOMContentLoaded` / `load` after restoring. See the warning below |
 | Live INP overlay | ❌ | Floating INP / blocking-time badge (admins only) |
+
+> **Upgrading from 1.0.0?** Script delay is switched **off** after the update. In 1.0.0 it never actually ran (see the changelog), so no existing site has experienced it. Rather than enable brand-new behaviour automatically across every install, we leave it off and let you turn it on when you're ready to check the front end. Fresh installs still default to on.
+
+> **On "Re-fire ready events":** `DOMContentLoaded` and `load` are global. Re-dispatching them also re-runs handlers registered by scripts that were *never* delayed — which can double-count analytics or initialise a slider twice. Leave it off unless a delayed library fails to start, and check the front end afterwards. Prefer the namespaced `queueforge-scripts-loaded` event, which always fires.
 
 ---
 
@@ -123,6 +128,18 @@ The free plugin delays **all** eligible scripts on first interaction. **QueueFor
 ---
 
 ## 📋 Changelog
+
+### 1.1.0
+
+**The delay never actually ran in 1.0.0.** The plugin parked its own configuration object along with everything else, because WordPress names that tag after the script handle (`qfinp-runtime-js-before`) and the exclusion list only looked for `queueforge`. The runtime booted with an empty config, bound no interaction listeners, set no fallback timer, and restored nothing — so on every 1.0.0 site, delayed scripts stayed dead for the life of the page. The default *Skip logged-in editors* setting is why it went unnoticed: signed in, you never saw the optimised page.
+
+- **Fix:** the plugin no longer parks its own config (`qfinp` added to the hard exclusion list).
+- **Fix:** a large inline script could blank the whole page. Past PCRE's backtrack limit the rewrite returned `null`, and returning `null` from an output-buffer handler makes PHP emit an empty response — roughly 1 MB of inline JavaScript was enough, which page builders produce routinely. The untouched HTML is now returned instead.
+- **Change:** delay is switched **off** on upgrade, with an admin notice explaining why. Since the optimisation never ran, enabling it automatically would have been shipping brand-new behaviour to every install at once. Fresh installs are unaffected.
+- **Fix:** the debug overlay could show to visitors. Config went through `wp_localize_script`, which casts every value to a string — so `0` arrived as `"0"`, which is truthy in JavaScript. Now sent as real JSON via `wp_add_inline_script`.
+- **New:** re-firing `DOMContentLoaded` / `load` is opt-in and off by default. They are global events, so re-dispatching them also re-runs handlers from scripts that were never delayed. The namespaced `queueforge-scripts-loaded` event always fires.
+- **Fix:** scripts marked `async` no longer block the restore queue, preserving the parallel fetching those tags asked for.
+- **Fix:** capability check added to the notice-dismiss handler; the support notice no longer marks itself dismissed just by rendering.
 
 ### 1.0.0
 

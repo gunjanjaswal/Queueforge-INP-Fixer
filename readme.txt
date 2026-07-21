@@ -4,7 +4,7 @@ Donate link: https://ko-fi.com/gunjanjaswal
 Tags: performance, web-vitals, inp, javascript, core-web-vitals
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -68,6 +68,15 @@ Enable the **Live INP overlay** in settings and browse the front end while logge
 Yes. It rewrites the HTML as it is generated; the result can be cached normally. It complements page caching rather than replacing it.
 
 == Changelog ==
+
+= 1.1.0 =
+* **Fix: delayed scripts never actually ran.** The plugin parked its own configuration object alongside everything else, because WordPress names that tag after the script handle (`qfinp-runtime-js-before`) and the exclusion list only looked for `queueforge`. The runtime booted with an empty config, bound no interaction listeners, set no fallback timer, and restored nothing — so on every site running 1.0.0, delayed scripts stayed dead for the life of the page. The default "skip logged-in editors" setting is why this went unnoticed: signed in, you never saw the optimised page.
+* **Fix: a large inline script could blank the whole page.** Past PCRE&#039;s backtrack limit the rewrite returned null, and returning null from an output-buffer handler makes PHP emit an empty response. Roughly 1 MB of inline JavaScript was enough, which page builders produce routinely. The original HTML is now returned untouched instead.
+* **Change: delay is switched off on upgrade.** Because the optimisation never ran in 1.0.0, no existing site has ever experienced it. Enabling it automatically would have been shipping brand-new behaviour to every install at once, so upgrades now start with it off and an admin notice explaining why. Fresh installs are unaffected.
+* **Fix: the debug overlay could show to visitors.** Config was passed through `wp_localize_script`, which casts every value to a string — so `0` arrived as `"0"`, which is truthy in JavaScript. Now sent as real JSON via `wp_add_inline_script`.
+* **New: re-firing DOMContentLoaded/load is now opt-in and off by default.** Those are global events, so re-dispatching them also re-runs handlers from scripts that were never delayed, double-counting analytics and initialising sliders twice. The namespaced `queueforge-scripts-loaded` event is always emitted.
+* **Fix: scripts marked `async` no longer block the restore queue**, preserving the parallel fetching those tags asked for.
+* Fix: added a capability check to the notice-dismiss handler, and stopped the support notice marking itself dismissed simply by rendering.
 
 = 1.0.0 =
 * Initial release: interaction-delayed JavaScript, main-thread yielding, fallback timeout, exclusions, logged-in skip, and live INP/long-task overlay.

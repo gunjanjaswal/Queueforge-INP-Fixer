@@ -34,6 +34,7 @@
     function restoreScript(oldScript) {
         return new Promise(function (resolve) {
             var newScript = document.createElement('script');
+            var wasAsync = oldScript.hasAttribute('async');
 
             for (var i = 0; i < oldScript.attributes.length; i++) {
                 var attr = oldScript.attributes[i];
@@ -55,7 +56,17 @@
                 return;
             }
 
-            // External script: wait for it before continuing to preserve order.
+            // A tag that was originally async made no ordering promise, so
+            // awaiting it would serialise fetches that the page expected to run
+            // in parallel — turning N analytics/ad tags into N round trips.
+            // Insert it and move on; only ordered scripts block the chain.
+            if (wasAsync) {
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+                resolve();
+                return;
+            }
+
+            // Ordered external script: wait for it before continuing.
             newScript.addEventListener('load', resolve);
             newScript.addEventListener('error', resolve);
             oldScript.parentNode.replaceChild(newScript, oldScript);
@@ -84,11 +95,23 @@
         }
 
         chain.then(function () {
-            // Let late-binding libraries hook in if they listen for these.
-            try {
-                document.dispatchEvent(new Event('DOMContentLoaded', { bubbles: true }));
-                window.dispatchEvent(new Event('load'));
-            } catch (e) { /* older browsers */ }
+            // Re-firing DOMContentLoaded and load is opt-in, and off by default.
+            //
+            // These are global events: every listener on the page hears them,
+            // including ones registered by scripts that were never delayed
+            // (jQuery is undelayed by default). Re-firing them therefore
+            // re-runs handlers that already ran — duplicate analytics pageviews,
+            // sliders and lightboxes initialised twice, handlers double-bound.
+            // Some delayed libraries do need the nudge, so it stays available,
+            // but a site should opt into that trade rather than inherit it.
+            if (cfg.ready) {
+                try {
+                    document.dispatchEvent(new Event('DOMContentLoaded', { bubbles: true }));
+                    window.dispatchEvent(new Event('load'));
+                } catch (e) { /* older browsers */ }
+            }
+            // Always emitted, and namespaced, so integrations have something
+            // safe to listen for.
             document.dispatchEvent(new Event('queueforge-scripts-loaded'));
         });
     }
