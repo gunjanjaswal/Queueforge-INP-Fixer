@@ -85,5 +85,8 @@ Yes. It rewrites the HTML as it is generated; the result can be cached normally.
 
 == Upgrade Notice ==
 
+= 1.1.0 =
+Script delay never actually worked in 1.0.0: delayed scripts were never restored, so the optimisation did nothing. Now fixed. As the behaviour is effectively new, delay arrives switched OFF after this update. Enable it in Settings when ready to check your front end.
+
 = 1.0.0 =
 Initial release.
