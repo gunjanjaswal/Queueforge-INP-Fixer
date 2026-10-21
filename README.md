@@ -155,4 +155,4 @@ If this helped you turn your INP green, consider supporting development:
 
 [![Ko-fi](https://img.shields.io/badge/Buy%20me%20a%20coffee-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/gunjanjaswal)
 
-**Author:** [Gunjan Jaswal](https://www.gunjanjaswal.me) · ✉️ hello@gunjanjaswal.me · 📜 GPLv2 or later
+**Author:** [Gunjan Jaswal](https://gunjanjaswal.me) · ✉️ hello@gunjanjaswal.me · 📜 GPLv2 or later

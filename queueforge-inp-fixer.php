@@ -5,7 +5,7 @@
  * Description: Lowers Interaction to Next Paint (INP) by delaying heavy third-party / theme JavaScript until the first real user interaction and yielding the main thread between each script so the browser stays responsive. Includes a live INP + long-task debug overlay.
  * Version: 1.1.0
  * Author: Gunjan Jaswal
- * Author URI: https://www.gunjanjaswal.me
+ * Author URI: https://gunjanjaswal.me
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: queueforge-inp-fixer
