@@ -4,7 +4,7 @@ Donate link: https://ko-fi.com/gunjanjaswal
 Tags: performance, web-vitals, inp, javascript, core-web-vitals
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -69,6 +69,9 @@ Yes. It rewrites the HTML as it is generated; the result can be cached normally.
 
 == Changelog ==
 
+= 1.2.0 =
+* New: "Load on browser idle" option. With it on, delayed scripts are also released once the browser goes idle (via requestIdleCallback), not only on interaction or the fallback timeout, so they are ready before the visitor interacts without blocking first paint. Off by default, and browsers without the API simply fall back to the existing behaviour.
+
 = 1.1.0 =
 * **Fix: delayed scripts never actually ran.** The plugin parked its own configuration object alongside everything else, because WordPress names that tag after the script handle (`qfinp-runtime-js-before`) and the exclusion list only looked for `queueforge`. The runtime booted with an empty config, bound no interaction listeners, set no fallback timer, and restored nothing — so on every site running 1.0.0, delayed scripts stayed dead for the life of the page. The default "skip logged-in editors" setting is why this went unnoticed: signed in, you never saw the optimised page.
 * **Fix: a large inline script could blank the whole page.** Past PCRE&#039;s backtrack limit the rewrite returned null, and returning null from an output-buffer handler makes PHP emit an empty response. Roughly 1 MB of inline JavaScript was enough, which page builders produce routinely. The original HTML is now returned untouched instead.
@@ -84,6 +87,9 @@ Yes. It rewrites the HTML as it is generated; the result can be cached normally.
 * Every function, option, and the localized config object uses the qfinp prefix to avoid conflicts with other plugins.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Adds an optional "load on browser idle" release so delayed scripts are ready before interaction. Off by default; nothing changes unless you enable it.
 
 = 1.1.0 =
 Script delay never actually worked in 1.0.0: delayed scripts were never restored, so the optimisation did nothing. Now fixed. As the behaviour is effectively new, delay arrives switched OFF after this update. Enable it in Settings when ready to check your front end.

@@ -3,7 +3,7 @@
  * Plugin Name: QueueForge – Interaction to Next Paint Fixer
  * Plugin URI: https://github.com/gunjanjaswal/Queueforge-INP-Fixer
  * Description: Lowers Interaction to Next Paint (INP) by delaying heavy third-party / theme JavaScript until the first real user interaction and yielding the main thread between each script so the browser stays responsive. Includes a live INP + long-task debug overlay.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Gunjan Jaswal
  * Author URI: https://gunjanjaswal.me
  * License: GPLv2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
     die;
 }
 
-define('QFINP_VERSION', '1.1.0');
+define('QFINP_VERSION', '1.2.0');
 define('QFINP_FILE', __FILE__);
 
 /**
@@ -107,6 +107,7 @@ function qfinp_default_settings()
         'enable_delay'     => 1,
         'enable_yield'     => 1,
         'delay_fallback'   => 8,
+        'delay_idle'       => 0,
         'delay_jquery'     => 0,
         'skip_logged_in'   => 1,
         'enable_debug'     => 0,
@@ -128,7 +129,7 @@ function qfinp_sanitize_settings($input)
 {
     $clean = array();
 
-    $bool_keys = array('enable_delay', 'enable_yield', 'delay_jquery', 'skip_logged_in', 'enable_debug', 'dispatch_ready');
+    $bool_keys = array('enable_delay', 'enable_yield', 'delay_idle', 'delay_jquery', 'skip_logged_in', 'enable_debug', 'dispatch_ready');
     foreach ($bool_keys as $key) {
         $clean[$key] = !empty($input[$key]) ? 1 : 0;
     }
@@ -382,6 +383,7 @@ function qfinp_enqueue_runtime()
             'delay'    => qfinp_should_optimize() ? 1 : 0,
             'yield'    => !empty($s['enable_yield']) ? 1 : 0,
             'fallback' => (int) $s['delay_fallback'],
+            'idle'     => !empty($s['delay_idle']) ? 1 : 0,
             'debug'    => $debug,
             'ready'    => !empty($s['dispatch_ready']) ? 1 : 0,
         )) . ';',
@@ -441,6 +443,13 @@ function qfinp_render_settings_page()
                     <td>
                         <input type="number" id="qfinp_fallback" name="qfinp_settings[delay_fallback]" value="<?php echo esc_attr($s['delay_fallback']); ?>" min="0" max="60" class="small-text">
                         <p class="description"><?php esc_html_e('Load delayed scripts automatically after this many seconds even with no interaction (protects analytics / ads). 0 = only on interaction. Default: 8.', 'queueforge-inp-fixer'); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Load on browser idle', 'queueforge-inp-fixer'); ?></th>
+                    <td>
+                        <label><input type="checkbox" name="qfinp_settings[delay_idle]" value="1" <?php checked($s['delay_idle']); ?>> <?php esc_html_e('Also release delayed scripts once the browser goes idle, not only on interaction or the fallback timeout.', 'queueforge-inp-fixer'); ?></label>
+                        <p class="description"><?php esc_html_e('Uses requestIdleCallback so scripts are ready before the visitor interacts, without blocking first paint. Off by default. Browsers without the API simply fall back to interaction and the timeout.', 'queueforge-inp-fixer'); ?></p>
                     </td>
                 </tr>
                 <tr>

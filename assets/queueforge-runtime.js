@@ -123,6 +123,11 @@
         if (cfg.fallback && cfg.fallback > 0) {
             setTimeout(loadDelayedScripts, cfg.fallback * 1000);
         }
+        // Optional: also release once the browser goes idle, so delayed scripts
+        // are ready before the visitor interacts without blocking first paint.
+        if (cfg.idle && typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(function () { loadDelayedScripts(); }, { timeout: 3000 });
+        }
     }
 
     /* --------------------------------------------------------------------
