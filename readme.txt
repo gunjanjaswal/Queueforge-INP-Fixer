@@ -3,8 +3,8 @@ Contributors: gunjanjaswal
 Donate link: https://ko-fi.com/gunjanjaswal
 Tags: performance, web-vitals, inp, javascript, core-web-vitals
 Requires at least: 5.0
-Tested up to: 7.1
-Stable tag: 1.2.0
+Tested up to: 7.1.4
+Stable tag: 1.2.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -68,6 +68,9 @@ Enable the **Live INP overlay** in settings and browse the front end while logge
 Yes. It rewrites the HTML as it is generated; the result can be cached normally. It complements page caching rather than replacing it.
 
 == Changelog ==
+
+= 1.2.1 =
+* Tested and confirmed compatible with WordPress 7.1.4.
 
 = 1.2.0 =
 * New: "Load on browser idle" option. With it on, delayed scripts are also released once the browser goes idle (via requestIdleCallback), not only on interaction or the fallback timeout, so they are ready before the visitor interacts without blocking first paint. Off by default, and browsers without the API simply fall back to the existing behaviour.

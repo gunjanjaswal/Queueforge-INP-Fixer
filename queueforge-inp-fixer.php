@@ -3,7 +3,7 @@
  * Plugin Name: QueueForge – Interaction to Next Paint Fixer
  * Plugin URI: https://github.com/gunjanjaswal/Queueforge-INP-Fixer
  * Description: Lowers Interaction to Next Paint (INP) by delaying heavy third-party / theme JavaScript until the first real user interaction and yielding the main thread between each script so the browser stays responsive. Includes a live INP + long-task debug overlay.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: Gunjan Jaswal
  * Author URI: https://gunjanjaswal.me
  * License: GPLv2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
     die;
 }
 
-define('QFINP_VERSION', '1.2.0');
+define('QFINP_VERSION', '1.2.1');
 define('QFINP_FILE', __FILE__);
 
 /**
