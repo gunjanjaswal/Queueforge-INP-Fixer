@@ -129,6 +129,8 @@ The free plugin delays **all** eligible scripts on first interaction. **QueueFor
 
 ## 📋 Changelog
 
+The full changelog lives in [`readme.txt`](readme.txt). Recent releases:
+
 ### 1.2.1
 - Tested and confirmed compatible with WordPress 7.1.4.
 
